@@ -1,0 +1,31 @@
+{
+    "name": "@this/cobra-framework-export-plugin",
+    "version": "1.0.0",
+    "author": "THIS GmbH",
+    "repository": "https://bitbucket.org/this-work/cobra-framework-export-plugin/src/master/README.md",
+    "description": "Nuxt module for static SCORM exports. Requires a minimal version of nuxt 2.17+",
+    "main": "./src/module.js",
+    "bin": {
+        "nuxt-static-export": "bin/nuxt-static-export.js"
+    },
+    "keywords": [
+        "scss",
+        "vue",
+        "nuxt",
+        "cobra",
+        "js",
+        "search",
+        "scorm",
+        "plugin",
+        "framework"
+    ],
+    "license": "MIT",
+    "files": [
+        "src"
+    ],
+    "dependencies": {
+        "archiver": "^5.1.0",
+        "axios-cookiejar-support": "^1.0.0",
+        "pipwerks-scorm-api-wrapper": "^0.1.2"
+    }
+}
