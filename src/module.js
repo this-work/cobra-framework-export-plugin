@@ -11,10 +11,59 @@
  */
 
 import { join } from 'path';
+import Exporter from './Exporter.class';
 
-export default function(moduleOptions) {
+let exportAlreadyStarted = false;
+let exporter = false;
+
+export default async function(moduleOptions) {
 
     const { nuxt } = this;
+
     const nuxtConfig = nuxt.options;
+
+    if (nuxtConfig.publicRuntimeConfig.IS_GENERATE_PROCESS) {
+
+        if (!exportAlreadyStarted) {
+
+            exportAlreadyStarted = true;
+
+            exporter = new Exporter(
+                nuxtConfig.publicRuntimeConfig.API,
+                nuxtConfig.publicRuntimeConfig.SCORM,
+                nuxtConfig.publicRuntimeConfig.SCORM_VERSION
+            );
+
+            await exporter.initialize(
+                process.env.SCORM_USERNAME,
+                process.env.SCORM_PASSWORD,
+                process.env.npm_config_entry,
+                process.env.npm_config_handle
+            );
+            
+            
+            
+            
+            
+        }
+
+        nuxtConfig.build.extend = (config, loader) => {
+            config['output']['publicPath'] = './_nuxt/';
+            return config;
+        };
+
+        nuxtConfig.router.mode = 'hash';
+        nuxtConfig.router.base = './';
+
+        nuxtConfig.router.extendRoutes = (routes, resolve) => {
+            routes.push(
+                {
+                    path: '',
+                    redirect: exporter.getIndexEntryPath()
+                }
+            )
+        }
+    }
+    
 
 }
