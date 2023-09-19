@@ -8,7 +8,9 @@ const chalk = require('chalk');
 const mkdirp = require('mkdirp');
 const fs = require('fs-extra');
 const path = require('path');
-
+const fetch = require('node-fetch');
+const ejs = require('ejs');ejs
+const archiver = require('archiver');
 
 export default class Exporter {
 
@@ -53,12 +55,16 @@ export default class Exporter {
 
         await this.login(username, password);
 
+        this.cleanDirs();
+
         this.entryUrlData = await this.requestEntryUrls(entry, siteHandle);
         this.entryJsons = await this.requestEntryJsons();
 
         this.createRouteJsons();
 
-        this.collectAssets();
+        this.createIdJson();
+
+        await this.collectAssets();
 
         this.createEntryJsons();
 
@@ -94,6 +100,18 @@ export default class Exporter {
         });
     }
 
+    cleanDirs() {
+        const dir = path.join(
+            process.env.PWD,
+            this.jsonPath
+        );
+        try {
+            rimraf.sync(dir);
+        } catch (err) {
+            console.error(`Error while deleting ${dir}.`);
+        }
+    }
+
     async requestEntryUrls(entry, siteHandle) {
 
         if (!entry) {
@@ -120,6 +138,12 @@ export default class Exporter {
     }
 
     async requestEntryJsons() {
+
+        if (!this.entryUrlData) {
+            consola.error("No Craft entry is present with given entry ID.");
+            process.exit(1);
+        }
+
         const entryUrls = this.entryUrlData.pages;
 
         consola.info(`Get the content of ${chalk.bold.cyan(this.entryUrlData.pages.length)} page/s`);
@@ -166,7 +190,38 @@ export default class Exporter {
         });
     }
 
-    collectAssets() {
+    createIdJson() {
+
+        const idList = {
+            playlists: {},
+            quizzes: {}
+        };
+
+        this.entryJsons.forEach(page => {
+            const pageUrl = Object.keys(page).join();
+
+            if (pageUrl.search('/playlists/') >= 0) {
+                idList.playlists[page[pageUrl].data[0].id] = pageUrl;
+            }
+            if (pageUrl.search('/quizzes/') >= 0) {
+                idList.quizzes[page[pageUrl].id] = pageUrl;
+            }
+
+        });
+
+        const target = path.join(
+            process.env.PWD,
+            this.jsonPath,
+            'ids.json'
+        );
+
+        fs.writeFileSync(target, JSON.stringify(idList, null, 4));
+
+    }
+
+    async collectAssets() {
+
+        consola.info(`Get all assets`);
 
         const regexp = new RegExp('\"(' + this.api +'\/)(.[^\\"]*)\"', 'g');
         const regexp33 = new RegExp('\"', 'g');
@@ -178,8 +233,15 @@ export default class Exporter {
             this.entryAssets.push(match[0].replace(regexp33, ''));
         }
 
+        const regexp99 = new RegExp('\"\/assets(.[^\\"]*)\"', 'g');
+        let match2;
+        while ((match2 = regexp99.exec(entryJsonsString)) !== null) {
+            this.entryAssets.push(this.api + match2[0].replace(regexp33, ''));
+        }
+
         const regexp2 = new RegExp(this.api +'\/', 'g');
-        this.entryJsons = JSON.parse(entryJsonsString.replace(regexp2, "./"));
+        const regexp9933 = new RegExp('\"\/assets\/', 'g');
+        this.entryJsons = JSON.parse(entryJsonsString.replace(regexp2, "./").replace(regexp9933, '"./assets/'));
 
         const target = path.join(
             process.env.PWD,
@@ -190,6 +252,110 @@ export default class Exporter {
         mkdirp.sync(path.dirname(target));
         fs.writeFileSync(target, JSON.stringify(this.entryAssets, null, 4));
 
+        await Promise.all(this.entryAssets.map(async asset => {
+
+            const splittedAsset = asset.split('/');
+
+            let assetPathArray = splittedAsset.slice(3);
+            const assetName = assetPathArray.pop();
+            const assetPath = assetPathArray.join('/');
+
+            fs.mkdirSync(path.join(
+                process.env.PWD,
+                'assets/export/assets/' + assetPath,
+            ), { recursive: true })
+
+            return await fetch(asset).then(res =>
+                res.body.pipe(fs.createWriteStream(path.join(
+                        process.env.PWD,
+                        'assets/export/assets/' + assetPath,
+                        assetName
+                    )
+                ))
+            )
+        }));
+
+        consola.success("Collected all assets");
+
+    }
+
+    copyAssets() {
+
+        const srcDir = path.join(
+            process.env.PWD,
+            this.jsonPath + '/assets'
+        );
+        const destDir = path.join(
+            process.env.PWD,
+            'dist'
+        );
+        fs.copySync(srcDir, destDir, { overwrite: true })
+
+    }
+
+    scromTaskManager() {
+        if (this.scorm) {
+            this.copyScormData();
+            this.addScormManifest();
+        }
+    }
+
+    copyScormData() {
+
+        consola.info("Get all SCORM files");
+
+        const srcDir = path.join(
+            __dirname,
+            'scorm/' + this.scormVersion + '/static'
+        );
+
+        const destDir = path.join(
+            process.env.PWD,
+            'dist'
+        );
+
+        fs.copySync(srcDir, destDir, { overwrite: true });
+
+    }
+
+    addScormManifest (organization, description, keyword) {
+
+        const routes = JSON.parse(fs.readFileSync(path.join(
+            process.env.PWD,
+            this.jsonPath + '/routes.json'
+        ), 'utf8'));
+
+        let routeIndexPath = routes.index;
+
+        const entryContent = JSON.parse(fs.readFileSync(path.join(
+            process.env.PWD,
+            this.jsonPath + '/data' + routeIndexPath + '.json'
+        ), 'utf8'));
+
+        const data = {
+            organization: process.env.npm_package_name || 'default',
+            description: process.env.npm_config_scorm_description,
+            keyword: process.env.npm_config_scorm_keyword
+        };
+
+        if (routeIndexPath.search('/quizzes/') >= 0) {
+            data['title'] = entryContent.meta.title;
+        } else {
+            data['title'] = entryContent.data[0].stage.heading.headline;
+        }
+
+        try {
+
+            let manifest = fs.readFileSync(path.join(__dirname, 'scorm/' + this.scormVersion ) + '/imsmanifest.xml', 'utf-8');
+            manifest = ejs.render( manifest, data );
+            fs.writeFileSync(path.join( process.env.PWD, 'dist') + '/imsmanifest.xml', manifest, 'utf8');
+
+        } catch (e) {
+            console.log(e);
+        }
+
+        consola.success("Generated all SCORM files");
+
     }
 
     createEntryJsons() {
@@ -198,7 +364,7 @@ export default class Exporter {
 
                 const target = path.join(
                     process.env.PWD,
-                    this.jsonPath,
+                    this.jsonPath + '/data',
                     filePath + '.json'
                 );
 
@@ -208,6 +374,51 @@ export default class Exporter {
                 fs.writeFileSync(target, JSON.stringify(content, null, 4));
             }
         });
+    }
+
+    async archivePackage(filename, destination) {
+
+        return new Promise((resolve, reject) => {
+
+            if (!fs.existsSync(destination)) {
+                fs.mkdirSync(destination, { recursive: true });
+            }
+
+            if (!filename) {
+                const dateNow = new Date();
+
+                const date = ('0' + dateNow.getDate()).slice(-2);
+                const month = ('0' + (dateNow.getMonth() + 1)).slice(-2);
+                const year = dateNow.getFullYear();
+
+                filename = `${destination}export_${year + '-' + month + '-' + date + '_' + dateNow.getHours() + '-' + dateNow.getMinutes()}`;
+            } else {
+                filename = destination + filename;
+            }
+
+            const output = fs.createWriteStream(filename + '.zip');
+            const archive = archiver('zip');
+
+            archive.pipe(output);
+
+            archive.directory('dist/', false);
+            archive.finalize();
+
+            output.on('finish', () => {
+                resolve(filename);
+                if (this.scorm) {
+                    consola.success(`${chalk.bold.cyan('SCORM ' + this.scormVersion)} Export completed`);
+                } else {
+                    consola.success(`${chalk.bold.cyan('Static')} Export completed`);
+                }
+                consola.info(`The export was stored in ${chalk.bold.gray(filename)}`);
+            });
+            output.on('error', reject);
+
+        });
+
+
+
     }
 
 }

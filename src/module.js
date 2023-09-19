@@ -24,6 +24,16 @@ export default async function(moduleOptions) {
 
     if (nuxtConfig.publicRuntimeConfig.IS_GENERATE_PROCESS) {
 
+        nuxtConfig.build.extend = (config, loader) => {
+            config['output']['publicPath'] = './_nuxt/';
+            return config;
+        };
+
+        nuxtConfig.router.mode = 'hash';
+        nuxtConfig.router.base = './';
+        nuxtConfig.generate.manifest = false;
+        nuxtConfig.generate.nojekyll = false;
+
         if (!exportAlreadyStarted) {
 
             exportAlreadyStarted = true;
@@ -40,20 +50,8 @@ export default async function(moduleOptions) {
                 process.env.npm_config_entry,
                 process.env.npm_config_handle
             );
-            
-            
-            
-            
-            
+
         }
-
-        nuxtConfig.build.extend = (config, loader) => {
-            config['output']['publicPath'] = './_nuxt/';
-            return config;
-        };
-
-        nuxtConfig.router.mode = 'hash';
-        nuxtConfig.router.base = './';
 
         nuxtConfig.router.extendRoutes = (routes, resolve) => {
             routes.push(
@@ -63,7 +61,16 @@ export default async function(moduleOptions) {
                 }
             )
         }
+
+        this.nuxt.hook("generate:done", async (moduleContainer) => {
+            exporter.copyAssets();
+            exporter.scromTaskManager();
+
+            await exporter.archivePackage(process.env.npm_config_filename, process.env.npm_config_destination);
+
+        });
+
     }
-    
+
 
 }
