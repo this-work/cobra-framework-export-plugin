@@ -1,5 +1,5 @@
-const SCORMCommunicator = require( './communicator.js' );
-import ids from '../../../public/_jsons/ids.json';
+const SCORMCommunicator = require( '@this/cobra-framework-export-plugin/src/scorm/2004/communicator' );
+import ids from '@/assets/export/ids.json';
 
 function initialize() {
 
@@ -42,25 +42,27 @@ function trackTerminate() {
 	}
 }
 
-document.addEventListener('track-playlist', event => {
+document.addEventListener('playlist-completed', event => {
 
     const scormCommunicator = new SCORMCommunicator();
-    const completedPlaylists = getPlaylistArray(scormCommunicator.get('cmi.suspend_data'));
+    let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
+    const completedPlaylists = getPlaylistArray(suspendData.cpl);
 
     if (event.detail.completed) {
 
-        completedPlaylists.push(event.detail.playlist + '');
+        completedPlaylists.push(event.detail.id + '');
 
     } else {
 
-        const index = completedPlaylists.indexOf(event.detail.playlist + '');
+        const index = completedPlaylists.indexOf(event.detail.id + '');
         if (index > -1) {
             completedPlaylists.splice(index, 1);
         }
 
     }
 
-    scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
+    suspendData.cpl = completedPlaylists.join(',');
+    scormCommunicator.set('cmi.suspend_data', JSON.stringify(suspendData));
 
     if (playlistsCompleted(completedPlaylists)) {
 
@@ -80,7 +82,7 @@ document.addEventListener('track-playlist', event => {
 
 });
 
-document.addEventListener('track-quiz-attempt', event => {
+document.addEventListener('quiz-attempt', event => {
 
     const scormCommunicator = new SCORMCommunicator();
     const score = event.detail.score * 100;
@@ -93,7 +95,8 @@ document.addEventListener('track-quiz-attempt', event => {
 
     if (event.detail.success) {
 
-        const completedPlaylists = getPlaylistArray(scormCommunicator.get('cmi.suspend_data'));
+        let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
+        const completedPlaylists = getPlaylistArray(suspendData.cpl);
         completedPlaylists.push(event.detail.id + '');
         scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
         scormCommunicator.set('cmi.success_status', 'passed');
@@ -112,6 +115,19 @@ document.addEventListener('track-terminate', () => {
 window.addEventListener('beforeunload', () => {
 	trackTerminate();
 });
+
+function getSuspendDataObject(suspend_data) {
+    let suspendData = suspend_data;
+
+    if (suspendData.length <= 0) {
+        suspendData = '{"cpl": ""}';
+    }
+    if (!suspendData.includes('cpl')) {
+        suspendData = suspendData.replace('{', '{"cpl": "",')
+    }
+
+    return JSON.parse(suspendData);
+}
 
 function getPlaylistArray(completedPlaylistsRaw) {
     return (completedPlaylistsRaw ? completedPlaylistsRaw.split(',') : []);
