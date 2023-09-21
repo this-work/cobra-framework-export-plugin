@@ -49,8 +49,8 @@ export default async function(moduleOptions) {
             await exporter.initialize(
                 process.env.EXPORT_USERNAME,
                 process.env.EXPORT_PASSWORD,
-                process.env.npm_config_entry,
-                process.env.npm_config_handle
+                process.env.EXPORT_ENTRY,
+                process.env.EXPORT_HANDLE
             );
 
         }
@@ -91,7 +91,7 @@ export default async function(moduleOptions) {
                 exporter.copyAssets();
                 exporter.scromTaskManager();
 
-                await exporter.archivePackage(process.env.npm_config_filename, process.env.npm_config_destination);
+                await exporter.archivePackage(process.env.EXPORT_FILENAME, process.env.EXPORT_DESTINATION);
 
             }
 

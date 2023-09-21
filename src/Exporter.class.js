@@ -334,8 +334,8 @@ export default class Exporter {
 
         const data = {
             organization: process.env.npm_package_name || 'default',
-            description: process.env.npm_config_scorm_description,
-            keyword: process.env.npm_config_scorm_keyword
+            description: process.env.EXPORT_SCORM_DESCRIPTION,
+            keyword: process.env.EXPORT_SCORM_KEYWORD
         };
 
         if (routeIndexPath.search('/quizzes/') >= 0) {
