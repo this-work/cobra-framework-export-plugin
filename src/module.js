@@ -97,6 +97,11 @@ export default async function(moduleOptions) {
 
         });
 
+        this.addPlugin({
+            src: join(__dirname, 'export.js'),
+            fileName: 'cobra-framework/export.js'
+        });
+
         if (nuxtConfig.publicRuntimeConfig.SCORM) {
             this.addPlugin({
                 src: join(__dirname, 'scorm/' + nuxtConfig.publicRuntimeConfig.SCORM_VERSION + '/tracking.js'),
@@ -105,10 +110,5 @@ export default async function(moduleOptions) {
         }
 
     }
-
-    this.addPlugin({
-        src: join(__dirname, 'export.js'),
-        fileName: 'cobra-framework/export.js'
-    });
 
 }
