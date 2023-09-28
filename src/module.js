@@ -34,7 +34,7 @@ export default async function(moduleOptions) {
         nuxtConfig.router.base = './';
         nuxtConfig.generate.manifest = false;
         nuxtConfig.generate.nojekyll = false;
-        nuxtConfig.generate.dir = 'export';
+        nuxtConfig.generate.dir = 'export/dist';
 
         if (!exportAlreadyStarted) {
 

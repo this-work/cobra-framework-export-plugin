@@ -1,6 +1,6 @@
 {
     "name": "@this/cobra-framework-export-plugin",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "author": "THIS GmbH",
     "repository": "https://bitbucket.org/this-work/cobra-framework-export-plugin/src/master/README.md",
     "description": "Nuxt module for static SCORM exports. Requires a minimal version of nuxt 2.17+",

@@ -287,7 +287,7 @@ export default class Exporter {
         );
         const destDir = path.join(
             process.env.PWD,
-            'export'
+            'export/dist'
         );
         fs.copySync(srcDir, destDir, { overwrite: true })
 
@@ -311,7 +311,7 @@ export default class Exporter {
 
         const destDir = path.join(
             process.env.PWD,
-            'export'
+            'export/dist'
         );
 
         fs.copySync(srcDir, destDir, { overwrite: true });
@@ -348,7 +348,7 @@ export default class Exporter {
 
             let manifest = fs.readFileSync(path.join(__dirname, 'scorm/' + this.scormVersion ) + '/imsmanifest.xml', 'utf-8');
             manifest = ejs.render( manifest, data );
-            fs.writeFileSync(path.join( process.env.PWD, 'export') + '/imsmanifest.xml', manifest, 'utf8');
+            fs.writeFileSync(path.join( process.env.PWD, 'export/dist') + '/imsmanifest.xml', manifest, 'utf8');
 
         } catch (e) {
             console.log(e);
@@ -380,6 +380,10 @@ export default class Exporter {
 
         return new Promise((resolve, reject) => {
 
+            if (!destination) {
+                destination = 'export/'
+            }
+
             if (!fs.existsSync(destination)) {
                 fs.mkdirSync(destination, { recursive: true });
             }
@@ -401,7 +405,7 @@ export default class Exporter {
 
             archive.pipe(output);
 
-            archive.directory('export/', false);
+            archive.directory('export/dist', false);
             archive.finalize();
 
             output.on('finish', () => {
