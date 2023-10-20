@@ -33,13 +33,13 @@ function initialize() {
 }
 
 function trackTerminate() {
-	try {
-		const scormCommunicator = new SCORMCommunicator();
+    try {
+        const scormCommunicator = new SCORMCommunicator();
 
-		scormCommunicator.quit();
-	} catch (exception) {
-		console.log(exception);
-	}
+        scormCommunicator.quit();
+    } catch (exception) {
+        console.log(exception);
+    }
 }
 
 document.addEventListener('playlist-completed', event => {
@@ -48,11 +48,11 @@ document.addEventListener('playlist-completed', event => {
     let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
     const completedPlaylists = getPlaylistArray(suspendData.cpl);
 
-    if (event.detail.completed) {
+    if (event.detail.completed && (completedPlaylists.indexOf(event.detail.id + '') < 0)) {
 
         completedPlaylists.push(event.detail.id + '');
 
-    } else {
+    } else if (!event.detail.completed) {
 
         const index = completedPlaylists.indexOf(event.detail.id + '');
         if (index > -1) {
@@ -93,27 +93,30 @@ document.addEventListener('quiz-attempt', event => {
         scormCommunicator.set('cmi.score.raw', score);
     }
 
-    if (event.detail.success) {
+    scormCommunicator.save();
 
-        let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
-        const completedPlaylists = getPlaylistArray(suspendData.cpl);
-        completedPlaylists.push(event.detail.id + '');
-        scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
-        scormCommunicator.set('cmi.success_status', 'passed');
-		scormCommunicator.set('cmi.completion_status', 'completed');
+});
+document.addEventListener('quiz-completed', event => {
 
-    }
+    const scormCommunicator = new SCORMCommunicator();
+
+    let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
+    const completedPlaylists = getPlaylistArray(suspendData.cpl);
+    completedPlaylists.push(event.detail.id + '');
+    scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
+    scormCommunicator.set('cmi.success_status', 'passed');
+    scormCommunicator.set('cmi.completion_status', 'completed');
 
     scormCommunicator.save();
 
 });
 
 document.addEventListener('track-terminate', () => {
-	trackTerminate();
+    trackTerminate();
 });
 
 window.addEventListener('beforeunload', () => {
-	trackTerminate();
+    trackTerminate();
 });
 
 function getSuspendDataObject(suspend_data) {

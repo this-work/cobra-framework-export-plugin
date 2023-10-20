@@ -101,14 +101,17 @@ export default class Exporter {
     }
 
     cleanDirs() {
-        const dir = path.join(
-            process.env.PWD,
-            this.jsonPath
-        );
         try {
-            rimraf.sync(dir);
+            rimraf.sync(path.join(
+                process.env.PWD,
+                this.jsonPath
+            ));
+            rimraf.sync(path.join(
+                process.env.PWD,
+                'export/dist'
+            ));
         } catch (err) {
-            console.error(`Error while deleting ${dir}.`);
+            console.error(`Error while deleting ${dir} or export/dist.`);
         }
     }
 

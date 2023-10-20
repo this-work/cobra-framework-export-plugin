@@ -33,11 +33,11 @@ export default (ctx, inject) => {
         let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
         const completedPlaylists = getPlaylistArray(suspendData.cpl);
 
-        if (event.detail.completed) {
+        if (event.detail.completed && (completedPlaylists.indexOf(event.detail.id + '') < 0)) {
 
             completedPlaylists.push(event.detail.id + '');
 
-        } else {
+        } else if (!event.detail.completed) {
 
             const index = completedPlaylists.indexOf(event.detail.id + '');
             if (index > -1) {
@@ -80,15 +80,19 @@ export default (ctx, inject) => {
             scormCommunicator.set('cmi.core.score.raw', score);
         }
 
-        if (event.detail.success) {
+        scormCommunicator.save();
 
-            let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
-            const completedPlaylists = getPlaylistArray(suspendData.cpl);
-            completedPlaylists.push(event.detail.id + '');
-            scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
-            scormCommunicator.set('cmi.core.lesson_status', 'passed');
+    });
 
-        }
+    document.addEventListener('quiz-completed', event => {
+
+        const scormCommunicator = new SCORMCommunicator();
+
+        let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
+        const completedPlaylists = getPlaylistArray(suspendData.cpl);
+        completedPlaylists.push(event.detail.id + '');
+        scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
+        scormCommunicator.set('cmi.core.lesson_status', 'passed');
 
         scormCommunicator.save();
 
