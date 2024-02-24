@@ -104,7 +104,13 @@ export default class Exporter {
         try {
             rimraf.sync(path.join(
                 process.env.PWD,
-                this.jsonPath
+                this.jsonPath,
+                'assets'
+            ));
+            rimraf.sync(path.join(
+                process.env.PWD,
+                this.jsonPath,
+                'data'
             ));
             rimraf.sync(path.join(
                 process.env.PWD,
