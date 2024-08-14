@@ -161,7 +161,7 @@ export default class Exporter {
             entryUrls.map(async uri => {
 
                 const { data } = await this.composer.get(
-                    this.apiGate + '/' + this.entryUrlData.site.handle + uri
+                    this.apiGate + '/' + this.entryUrlData.site.language + uri
                 )
                     .then(data => {
                         consola.success(`- Fetched: ${ data.data.hasOwnProperty('data') ? data.data.data[0].url : data.data.url}`);
