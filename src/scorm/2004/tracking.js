@@ -104,8 +104,22 @@ document.addEventListener('quiz-completed', event => {
     const completedPlaylists = getPlaylistArray(suspendData.cpl);
     completedPlaylists.push(event.detail.id + '');
     scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
-    scormCommunicator.set('cmi.success_status', 'passed');
-    scormCommunicator.set('cmi.completion_status', 'completed');
+
+    if (Object.keys(ids.quizzes).length <= 1) {
+        scormCommunicator.set('cmi.success_status', 'passed');
+        scormCommunicator.set('cmi.completion_status', 'completed');
+    } else {
+        let completedAllQuizzes = true;
+        Object.keys(ids.quizzes).forEach(key => {
+            if (!completedPlaylists.includes(key)) {
+                completedAllQuizzes = false;
+            }
+        });
+        if (completedAllQuizzes) {
+            scormCommunicator.set('cmi.success_status', 'passed');
+            scormCommunicator.set('cmi.completion_status', 'completed');
+        }
+    }
 
     scormCommunicator.save();
 

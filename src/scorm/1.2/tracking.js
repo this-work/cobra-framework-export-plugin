@@ -92,7 +92,20 @@ export default (ctx, inject) => {
         const completedPlaylists = getPlaylistArray(suspendData.cpl);
         completedPlaylists.push(event.detail.id + '');
         scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
-        scormCommunicator.set('cmi.core.lesson_status', 'passed');
+
+        if (Object.keys(ids.quizzes).length <= 1) {
+            scormCommunicator.set('cmi.core.lesson_status', 'passed');
+        } else {
+            let completedAllQuizzes = true;
+            Object.keys(ids.quizzes).forEach(key => {
+                if (!completedPlaylists.includes(key)) {
+                    completedAllQuizzes = false;
+                }
+            });
+            if (completedAllQuizzes) {
+                scormCommunicator.set('cmi.core.lesson_status', 'passed');
+            }
+        }
 
         scormCommunicator.save();
 
