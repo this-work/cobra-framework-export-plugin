@@ -91,7 +91,9 @@ export default (ctx, inject) => {
         let suspendData = getSuspendDataObject(scormCommunicator.get('cmi.suspend_data'));
         const completedPlaylists = getPlaylistArray(suspendData.cpl);
         completedPlaylists.push(event.detail.id + '');
-        scormCommunicator.set('cmi.suspend_data', completedPlaylists.join(','));
+
+        suspendData.cpl = completedPlaylists.join(',');
+        scormCommunicator.set('cmi.suspend_data', JSON.stringify(suspendData));
 
         if (Object.keys(ids.quizzes).length <= 1) {
             scormCommunicator.set('cmi.core.lesson_status', 'passed');
