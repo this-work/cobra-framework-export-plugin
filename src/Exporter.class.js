@@ -248,9 +248,19 @@ export default class Exporter {
             this.entryAssets.push(this.api + match2[0].replace(regexp33, ''));
         }
 
+        const regExImagerAssets = new RegExp('\"\/imager\/images(.[^\\"]*)\"', 'g');
+        let match3;
+        while ((match3 = regExImagerAssets.exec(entryJsonsString)) !== null) {
+            this.entryAssets.push(this.api + match3[0].replace(regexp33, ''));
+        }
+
         const regexp2 = new RegExp(this.api +'\/', 'g');
+        const regExImagerJson = new RegExp('\"\/imager\/images\/', 'g');
         const regexp9933 = new RegExp('\"\/assets\/', 'g');
-        this.entryJsons = JSON.parse(entryJsonsString.replace(regexp2, "./").replace(regexp9933, '"./assets/'));
+        this.entryJsons = JSON.parse(entryJsonsString
+            .replace(regexp2, "./")
+            .replace(regExImagerJson, '"./imager/images/')
+            .replace(regexp9933, '"./assets/'));
 
         const target = path.join(
             process.env.PWD,
