@@ -48,7 +48,7 @@ export default async function(moduleOptions) {
 
             await exporter.initialize(
                 process.env.EXPORT_USERNAME,
-                process.env.EXPORT_PASSWORD,
+                nuxtConfig.publicRuntimeConfig.EXPORT_PASSWORD,
                 process.env.EXPORT_ENTRY,
                 process.env.EXPORT_HANDLE
             );

@@ -30,6 +30,9 @@ export default class Exporter {
         this.scorm = scorm || false;
         this.scormVersion = version || '1.2';
 
+        this.csrfTokenName = false;
+        this.csrfTokenValue = false;
+
         this.composer = axiosCookieJarSupport(
             axios.create({
                 jar: new tough.CookieJar(null, { rejectPublicSuffixes: false }),
@@ -58,7 +61,7 @@ export default class Exporter {
         this.cleanDirs();
 
         this.entryUrlData = await this.requestEntryUrls(entry, siteHandle);
-        this.entryJsons = await this.requestEntryJsons();
+        this.entryJsons = await this.requestEntryJsons(siteHandle, username.split("@")[0]);
 
         this.createRouteJsons();
 
@@ -72,7 +75,7 @@ export default class Exporter {
 
     async renewCsrfToken() {
         const {
-            data: { csrfTokenValue }
+            data: { csrfTokenName, csrfTokenValue }
         } = await this.composer.get(this.csrfEndpoint).catch(e => {
             consola.error('CSRF TOKEN ERROR:');
             const { response } = e;
@@ -83,6 +86,9 @@ export default class Exporter {
             }
             process.exit(1);
         });
+
+        this.csrfTokenName = csrfTokenName;
+        this.csrfTokenValue = csrfTokenValue;
 
         this.composer.defaults.headers['x-csrf-token'] = csrfTokenValue;
     }
@@ -146,7 +152,7 @@ export default class Exporter {
 
     }
 
-    async requestEntryJsons() {
+    async requestEntryJsons(siteHandle, accessgroup) {
 
         if (!this.entryUrlData) {
             consola.error("No Craft entry is present with given entry ID.");
@@ -157,19 +163,29 @@ export default class Exporter {
 
         consola.info(`Get the content of ${chalk.bold.cyan(this.entryUrlData.pages.length)} page/s`);
 
+        await this.renewCsrfToken();
+
         return Promise.all(
             entryUrls.map(async uri => {
-
-                const { data } = await this.composer.get(
-                    this.apiGate + '/' + this.entryUrlData.site.language + uri
-                )
+                const { data } = await this.composer.request({
+                    method: 'post',
+                    url: `${this.api}/cacheapi`,
+                    data: {
+                        'lang': this.entryUrlData.site.language,
+                        'siteHandle': siteHandle,
+                        'request': this.apiGate + '/' + this.entryUrlData.site.language + uri,
+                        'slug': uri.split('/').slice(-1)[0],
+                        'cachegroup': accessgroup,
+                        [this.csrfTokenName]: this.csrfTokenValue
+                    }
+                })
                     .then(data => {
                         consola.success(`- Fetched: ${ data.data.hasOwnProperty('data') ? data.data.data[0].url : data.data.url}`);
                         return data;
                     })
-                    .catch(e => {
-                        consola.error('REQUEST ENTRY JSONS ERROR:');
-                        consola.error(e);
+                    .catch(({ response }) => {
+                        consola.error('REQUEST ENTRY URLS ERROR:');
+                        consola.error(response);
                         process.exit(1);
                     });
 
