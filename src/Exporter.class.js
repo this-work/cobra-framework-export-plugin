@@ -148,7 +148,14 @@ export default class Exporter {
 
         consola.success("Get list of Entries");
 
-        return data.data.filter(language => language.site.handle === siteHandle)[0];
+        const exportedEntryData = data.data.filter(language => language.site.handle === siteHandle)[0];
+
+        exportedEntryData.entry = '/' + siteHandle + exportedEntryData.entry
+        exportedEntryData.pages = exportedEntryData.pages.map(page => {
+            return  '/' + siteHandle + page
+        });
+
+        return exportedEntryData;
 
     }
 
@@ -173,7 +180,7 @@ export default class Exporter {
                     data: {
                         'lang': this.entryUrlData.site.language,
                         'siteHandle': siteHandle,
-                        'request': this.apiGate + '/' + this.entryUrlData.site.language + '/' + siteHandle + uri,
+                        'request': this.apiGate + '/' + this.entryUrlData.site.language + uri,
                         'slug': uri.split('/').slice(-1)[0],
                         'cachegroup': accessgroup,
                         [this.csrfTokenName]: this.csrfTokenValue
