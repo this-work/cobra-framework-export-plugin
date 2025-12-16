@@ -173,7 +173,7 @@ export default class Exporter {
                     data: {
                         'lang': this.entryUrlData.site.language,
                         'siteHandle': siteHandle,
-                        'request': this.apiGate + '/' + this.entryUrlData.site.language + uri,
+                        'request': this.apiGate + '/' + this.entryUrlData.site.language + '/' + siteHandle + uri,
                         'slug': uri.split('/').slice(-1)[0],
                         'cachegroup': accessgroup,
                         [this.csrfTokenName]: this.csrfTokenValue
