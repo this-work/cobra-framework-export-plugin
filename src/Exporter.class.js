@@ -140,6 +140,11 @@ export default class Exporter {
             process.exit(1);
         });
 
+        data.data[0].entry = this.stripPossibleTrailingSlash(data.data[0].entry)
+        data.data[0].pages = data.data[0].pages.map((page) => {
+            return this.stripPossibleTrailingSlash(page)
+        })
+
         consola.success("Get list of Entries");
 
         return data.data.filter(language => language.site.handle === siteHandle)[0];
@@ -176,6 +181,12 @@ export default class Exporter {
                 return { [uri]: data };
             })
         );
+    };
+
+    stripPossibleTrailingSlash(str) {
+        return str.endsWith('/') ?
+            str.slice(0, -1) :
+            str;
     };
 
     getIndexEntryPath() {
